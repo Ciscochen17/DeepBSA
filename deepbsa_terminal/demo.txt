@@ -1,0 +1,2 @@
+# ./demo.txt
+python main.py --i /[YOUR PATH]/bin/Excel_Files/nc-planthigh-pop1.csv --p False
