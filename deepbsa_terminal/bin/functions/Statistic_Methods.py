@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from keras.models import load_model
 from get_path import resource_path
-
+import logging
 
 def evaluate_frac(data, position):
     """对数据进行 5 k-fold CV 得到MSE最小的frac"""
@@ -522,14 +522,17 @@ class Statistic(object):
         all_data_for_plot = []
         smooth_data_for_plot = []
         smooth_for_threshold = []
+        nonemptyChromes = []
         # 计算数据
         Mpos = []
         for chrome_index in range(self.data.shape[0]):
-            print("chrome:",chrome_index+1)
+            logging.info("chrome {}-{}".format(chrome_index, self.chrome_set[chrome_index]))
             if len(self.data[chrome_index]) == 0:
+                logging.warning("Chrome {} is empty!Please check data or the parameters of pretreatment.".format(self.chrome_set[chrome_index]))
                 continue
             chr_data = get_data(self.func_name, self.data[chrome_index], self.ref_data[chrome_index],
                                 self.mut_data[chrome_index], self.num_pools)
+            nonemptyChromes.append(chrome_index)
             #############   用10kb平均
             # chr_data, mean_pos = mean_data(chr_data, self.position[chrome_index])
             # print(len(chr_data), len(mean_pos))
@@ -548,7 +551,7 @@ class Statistic(object):
         self.position = pos
         sort_pos = []
         sort_points = []
-        for i in range(len(self.position)):
+        for i in nonemptyChromes:#range(len(self.position)):
             index = np.argsort(self.position[i])
             sort_pos.append(self.position[i][index])
             sort_points.append(np.array(all_data_for_plot[i])[index])
@@ -559,27 +562,13 @@ class Statistic(object):
         # self.position = Mpos
         #############   用10kb平均
         for index in range(self.data.shape[0]):
-            if len(self.data[index]) == 0:
-                continue
             ax = fig.add_subplot(1, self.data.shape[0], index + 1)
-            # 散点图
-            ax.scatter(self.position[index][:len(all_data_for_plot[index])], all_data_for_plot[index],
-                       linewidths=0.1, color=colors[index % 2])
-            plt.plot(self.position[index][:len(smooth_data_for_plot[index])], smooth_data_for_plot[index],
-                     color="#ff0000", linewidth=3.0)
-            # 阈值线
-            if self.threshold == 0.0:
-                self.threshold = cal_threshold(smooth_for_threshold)
-            plt.hlines(self.threshold, xmin=0, xmax=max(self.position[index][:len(all_data_for_plot[index])]),
-                       colors="#29a6cf", linestyles="--", linewidth=2.0)
-
             plt.ylim(0, max(all_data_for_percentile) * 1.01)
             # 标上染色体号、隐藏横坐标
             plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0, hspace=0)
             # ax.set_xlabel(str(index + 1))
             ax.set_title(self.chrome_set[index])
             # ax.set_xticks([])
-
             frame = plt.gca()
             if index == 0:
                 ax.spines["right"].set_visible(False)
@@ -591,6 +580,20 @@ class Statistic(object):
                 ax.spines["right"].set_visible(False)
                 ax.spines["left"].set_visible(False)
                 frame.axes.get_yaxis().set_visible(False)
+            if len(self.data[index]) == 0:
+                continue
+            # 散点图
+            ax.scatter(self.position[index][:len(all_data_for_plot[index])], all_data_for_plot[index],
+                       linewidths=0.1, color=colors[index % 2])
+            plt.plot(self.position[index][:len(smooth_data_for_plot[index])], smooth_data_for_plot[index],
+                     color="#ff0000", linewidth=3.0)
+            # 阈值线
+            if self.threshold == 0.0:
+                self.threshold = cal_threshold(smooth_for_threshold)
+            plt.hlines(self.threshold, xmin=0, xmax=max(self.position[index][:len(all_data_for_plot[index])]),
+                       colors="#29a6cf", linestyles="--", linewidth=2.0)
+
+            
 
         if self.default_threshold == 0:
             self.threshold = format(self.threshold, '.4f')
@@ -616,10 +619,10 @@ class Statistic(object):
         np.save(os.path.join(self.save_path, "smooth_data_for_plot_{}.npy".format(self.func_name)),
                 smooth_data_for_plot)
         # 保存为txt
-        f = open(os.path.join(self.save_path, "{} values.txt".format(self.func_name)), "w")
-        for flag in range(len(self.chrome_set)):
-            for txt_pos, txt_value in zip(self.position[flag], all_data_for_plot[flag]):
-                txt_line = "{}\t{}\t{}\n".format(self.chrome_set[flag], int(txt_pos * 1e6), txt_value)
+        f = open(os.path.join(self.save_path, "{}_values.txt".format(self.func_name)), "w")
+        for flagPos, flagValue in zip(nonemptyChromes, range(len(all_data_for_plot))):#range(len(self.chrome_set)):
+            for txt_pos, txt_value in zip(self.position[flagPos], all_data_for_plot[flagValue]):
+                txt_line = "{}\t{}\t{}\n".format(self.chrome_set[flagPos], int(txt_pos * 1e6), txt_value)
                 f.writelines(txt_line)
         f.close()
 
