@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from keras.models import load_model
 from get_path import resource_path
-import logging
+
 
 def evaluate_frac(data, position):
     """对数据进行 5 k-fold CV 得到MSE最小的frac"""
@@ -526,13 +526,12 @@ class Statistic(object):
         # 计算数据
         Mpos = []
         for chrome_index in range(self.data.shape[0]):
-            logging.info("chrome {}-{}".format(chrome_index, self.chrome_set[chrome_index]))
+            print("chrome:",chrome_index+1)
             if len(self.data[chrome_index]) == 0:
-                logging.warning("Chrome {} is empty!Please check data or the parameters of pretreatment.".format(self.chrome_set[chrome_index]))
                 continue
+            nonemptyChromes.append(chrome_index)
             chr_data = get_data(self.func_name, self.data[chrome_index], self.ref_data[chrome_index],
                                 self.mut_data[chrome_index], self.num_pools)
-            nonemptyChromes.append(chrome_index)
             #############   用10kb平均
             # chr_data, mean_pos = mean_data(chr_data, self.position[chrome_index])
             # print(len(chr_data), len(mean_pos))
@@ -563,12 +562,12 @@ class Statistic(object):
         #############   用10kb平均
         for index in range(self.data.shape[0]):
             ax = fig.add_subplot(1, self.data.shape[0], index + 1)
-            plt.ylim(0, max(all_data_for_percentile) * 1.01)
             # 标上染色体号、隐藏横坐标
             plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0, hspace=0)
             # ax.set_xlabel(str(index + 1))
             ax.set_title(self.chrome_set[index])
             # ax.set_xticks([])
+
             frame = plt.gca()
             if index == 0:
                 ax.spines["right"].set_visible(False)
@@ -593,6 +592,7 @@ class Statistic(object):
             plt.hlines(self.threshold, xmin=0, xmax=max(self.position[index][:len(all_data_for_plot[index])]),
                        colors="#29a6cf", linestyles="--", linewidth=2.0)
 
+            plt.ylim(0, max(all_data_for_percentile) * 1.01)
             
 
         if self.default_threshold == 0:
@@ -619,8 +619,8 @@ class Statistic(object):
         np.save(os.path.join(self.save_path, "smooth_data_for_plot_{}.npy".format(self.func_name)),
                 smooth_data_for_plot)
         # 保存为txt
-        f = open(os.path.join(self.save_path, "{}_values.txt".format(self.func_name)), "w")
-        for flagPos, flagValue in zip(nonemptyChromes, range(len(all_data_for_plot))):#range(len(self.chrome_set)):
+        f = open(os.path.join(self.save_path, "{} values.txt".format(self.func_name)), "w")
+        for flagPos, flagValue in zip(nonemptyChromes, range(len(all_data_for_plot))):
             for txt_pos, txt_value in zip(self.position[flagPos], all_data_for_plot[flagValue]):
                 txt_line = "{}\t{}\t{}\n".format(self.chrome_set[flagPos], int(txt_pos * 1e6), txt_value)
                 f.writelines(txt_line)

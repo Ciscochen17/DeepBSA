@@ -6,8 +6,6 @@ from functions.vcf_handle import VCF2Excel
 from functions.pretreatment import Pretreatment
 from functions.none_pretreatment import NonePretreatment
 from functions.Statistic_Methods import Statistic
-import logging
-logging.getLogger().setLevel(logging.INFO)
 
 def main(args):
     if args.p == 1:
@@ -25,7 +23,7 @@ def main(args):
     else:
         args.p3 = False
     print("-" * 100)
-    logging.info("\nfile path:{}\nmethod:{}\nis pretreatment:{}\nread number:{}\nChi-square test:{}\nContinuity test:{}\nsmooth method:{}\nsmooth window size:{}\nthreshold:{}".format(
+    print("file path:{}\nmethod:{}\nis pretreatment:{}\nread number:{}\nChi-square test:{}\nContinuity test:{}\nsmooth method:{}\nsmooth window size:{}\nthreshold:{}".format(
         args.i, args.m, args.p, args.p1, args.p2, args.p3, args.s, args.w, args.t))
     print("-" * 100)
     # 新建文件夹
@@ -42,7 +40,7 @@ def main(args):
     file_type = temp.split(".")[1]
 
     if "vcf" in file_type:
-        logging.info("VCF Process")
+        print("VCF Process")
         vcf2excel = VCF2Excel(args.i, file_name, excel_path)
         file_path = vcf2excel.run()
     else:
@@ -53,18 +51,18 @@ def main(args):
         pretreat = Pretreatment(args.p1, args.p2, args.p3, file_path, file_name, pretreatment_dir)
         ref_data_path, mut_data_path, freq_data_path, pos_data_path, chrome_set = pretreat.run(return_path)
         if not return_path:
-            logging.info("pretreatment & files do not exist")
+            print("pretreatment & files do not exist")
         else:
-            logging.info("pretreatment & files exist")
+            print("pretreatment & files exist")
     else:
         return_path = os.path.exists(os.path.join(nopretreatment_dir, file_name + "_ref.npy"))
         nopretreat = NonePretreatment(file_path, file_name, nopretreatment_dir)
         ref_data_path, mut_data_path, freq_data_path, pos_data_path, chrome_set = nopretreat.run(return_path)
         if not return_path:
-            logging.info("nonepretreatment & files do not exist")
+            print("nonepretreatment & files do not exist")
         else:
-            logging.info("nonepretreatment & files exist")
-    logging.info(chrome_set)
+            print("nonepretreatment & files exist")
+    print(chrome_set)
     rsp = os.path.join(os.getcwd(), "Results")
     if not os.path.exists(rsp):
         os.mkdir(rsp)
@@ -85,7 +83,7 @@ if __name__ == "__main__":
     parser.add_argument("--m", default="DL", required=False, type=str, help="The algorithm(DL/K/ED4...) used. Default is DL.")
     parser.add_argument("--p", default=1, type=int, help="Whether to pretreatment data(1[True] or 0[False]). Default is True.")
     parser.add_argument("--p1", default=0, type=int, help="Pretreatment step 1: Number of read thread, the SNP whose number lower than it will be filtered. Default is 0.")
-    parser.add_argument("--p2", default=1, type=int, help="Pretreatment step 2: Chi-square test(1[True] or 0[False]). Default is 1[True].")
+    parser.add_argument("--p2", default=1, type=int, help="Pretreatment step 2: Chi-square test(1[True] or 0[False]). Default is 0[True].")
     parser.add_argument("--p3", default=1, type=int, help="Pretreatment step 3: Continuity test(1[True] or 0[False]). Default is 1[True].")
     # 方法选择等
     parser.add_argument("--s", default="LOWESS", type=str,
